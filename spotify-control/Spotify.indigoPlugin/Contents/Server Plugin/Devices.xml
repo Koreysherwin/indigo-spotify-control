@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Devices>
+	<Device type="custom" id="spotifyPlayer">
+		<Name>Spotify Player</Name>
+		<ConfigUI>
+			<Field id="updateFrequency" type="menu" defaultValue="1">
+				<Label>Update Frequency:</Label>
+				<List>
+					<Option value="0.5">Every 0.5 seconds</Option>
+					<Option value="1">Every 1 second</Option>
+					<Option value="2">Every 2 seconds</Option>
+					<Option value="5">Every 5 seconds</Option>
+					<Option value="10">Every 10 seconds</Option>
+				</List>
+			</Field>
+			<Field id="updateVariables" type="checkbox" defaultValue="false">
+				<Label>Update Indigo Variables:</Label>
+				<Description>Create/update Indigo variables with Spotify data</Description>
+			</Field>
+			<Field id="variablePrefix" type="textfield" defaultValue="Spotify">
+				<Label>Variable Prefix:</Label>
+				<Description>Prefix for created variables (e.g., "Spotify" creates "SpotifyTrackName")</Description>
+			</Field>
+		</ConfigUI>
+		<States>
+			<!-- Playback State -->
+			<State id="playerState">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Player State</TriggerLabel>
+				<ControlPageLabel>Player State</ControlPageLabel>
+			</State>
+			<State id="isPlaying">
+				<ValueType boolType="OnOff">Boolean</ValueType>
+				<TriggerLabel>Is Playing</TriggerLabel>
+				<ControlPageLabel>Is Playing</ControlPageLabel>
+			</State>
+			<State id="isPaused">
+				<ValueType boolType="OnOff">Boolean</ValueType>
+				<TriggerLabel>Is Paused</TriggerLabel>
+				<ControlPageLabel>Is Paused</ControlPageLabel>
+			</State>
+			<State id="isStopped">
+				<ValueType boolType="OnOff">Boolean</ValueType>
+				<TriggerLabel>Is Stopped</TriggerLabel>
+				<ControlPageLabel>Is Stopped</ControlPageLabel>
+			</State>
+			
+			<!-- Track Information -->
+			<State id="trackName">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Track Name</TriggerLabel>
+				<ControlPageLabel>Track Name</ControlPageLabel>
+			</State>
+			<State id="artist">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Artist</TriggerLabel>
+				<ControlPageLabel>Artist</ControlPageLabel>
+			</State>
+			<State id="album">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Album</TriggerLabel>
+				<ControlPageLabel>Album</ControlPageLabel>
+			</State>
+			<State id="albumArtist">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Album Artist</TriggerLabel>
+				<ControlPageLabel>Album Artist</ControlPageLabel>
+			</State>
+			<State id="trackNumber">
+				<ValueType>Number</ValueType>
+				<TriggerLabel>Track Number</TriggerLabel>
+				<ControlPageLabel>Track Number</ControlPageLabel>
+			</State>
+			<State id="discNumber">
+				<ValueType>Number</ValueType>
+				<TriggerLabel>Disc Number</TriggerLabel>
+				<ControlPageLabel>Disc Number</ControlPageLabel>
+			</State>
+			<State id="artworkUrl">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Artwork URL</TriggerLabel>
+				<ControlPageLabel>Artwork URL</ControlPageLabel>
+			</State>
+			<State id="spotifyUrl">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Spotify URL</TriggerLabel>
+				<ControlPageLabel>Spotify URL</ControlPageLabel>
+			</State>
+			<State id="trackId">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Track ID</TriggerLabel>
+				<ControlPageLabel>Track ID</ControlPageLabel>
+			</State>
+			
+			<!-- Playback Position and Duration -->
+			<State id="playerPosition">
+				<ValueType>Number</ValueType>
+				<TriggerLabel>Player Position (seconds)</TriggerLabel>
+				<ControlPageLabel>Position (s)</ControlPageLabel>
+			</State>
+			<State id="playerPositionFormatted">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Player Position (formatted)</TriggerLabel>
+				<ControlPageLabel>Position</ControlPageLabel>
+			</State>
+			<State id="duration">
+				<ValueType>Number</ValueType>
+				<TriggerLabel>Duration (seconds)</TriggerLabel>
+				<ControlPageLabel>Duration (s)</ControlPageLabel>
+			</State>
+			<State id="durationFormatted">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Duration (formatted)</TriggerLabel>
+				<ControlPageLabel>Duration</ControlPageLabel>
+			</State>
+			<State id="progressPercent">
+				<ValueType>Number</ValueType>
+				<TriggerLabel>Progress Percentage</TriggerLabel>
+				<ControlPageLabel>Progress %</ControlPageLabel>
+			</State>
+			
+			<!-- Volume and Audio -->
+			<State id="soundVolume">
+				<ValueType>Number</ValueType>
+				<TriggerLabel>Volume</TriggerLabel>
+				<ControlPageLabel>Volume</ControlPageLabel>
+			</State>
+			<State id="muted">
+				<ValueType boolType="OnOff">Boolean</ValueType>
+				<TriggerLabel>Muted</TriggerLabel>
+				<ControlPageLabel>Muted</ControlPageLabel>
+			</State>
+			
+			<!-- Shuffle and Repeat -->
+			<State id="shuffling">
+				<ValueType boolType="OnOff">Boolean</ValueType>
+				<TriggerLabel>Shuffling</TriggerLabel>
+				<ControlPageLabel>Shuffle</ControlPageLabel>
+			</State>
+			<State id="repeating">
+				<ValueType boolType="OnOff">Boolean</ValueType>
+				<TriggerLabel>Repeating</TriggerLabel>
+				<ControlPageLabel>Repeat</ControlPageLabel>
+			</State>
+			
+			<!-- Popularity and Year -->
+			<State id="popularity">
+				<ValueType>Number</ValueType>
+				<TriggerLabel>Popularity</TriggerLabel>
+				<ControlPageLabel>Popularity</ControlPageLabel>
+			</State>
+			<State id="releaseDate">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Release Date</TriggerLabel>
+				<ControlPageLabel>Release Date</ControlPageLabel>
+			</State>
+			
+			<!-- Display Status -->
+			<State id="status">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Status Display</TriggerLabel>
+				<ControlPageLabel>Status</ControlPageLabel>
+			</State>
+		</States>
+		<UiDisplayStateId>status</UiDisplayStateId>
+	</Device>
+</Devices>
