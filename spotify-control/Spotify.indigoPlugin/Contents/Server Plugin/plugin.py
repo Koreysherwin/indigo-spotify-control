@@ -89,121 +89,143 @@ class Plugin(indigo.PluginBase):
                 tell application "Spotify"
                     try
                         set playerState to player state as string
-                        set trackName to name of current track
-                        set trackArtist to artist of current track
-                        set trackAlbum to album of current track
-                        set trackDuration to duration of current track
-                        set playerPos to player position
-                        set trackNumber to track number of current track
-                        set discNumber to disc number of current track
-                        set trackPopularity to popularity of current track
-                        set artworkUrl to artwork url of current track
-                        set albumArtist to album artist of current track
-                        set spotifyUrl to spotify url of current track
-                        set trackId to id of current track
-                        set soundVol to sound volume
-                        set isShuffling to shuffling
-                        set isRepeating to repeating
-                        
-                        return {playerState:playerState, trackName:trackName, trackArtist:trackArtist, trackAlbum:trackAlbum, trackDuration:trackDuration, playerPosition:playerPos, trackNumber:trackNumber, discNumber:discNumber, popularity:trackPopularity, artworkUrl:artworkUrl, albumArtist:albumArtist, spotifyUrl:spotifyUrl, trackId:trackId, soundVolume:soundVol, shuffling:isShuffling, repeating:isRepeating}
+                        if playerState is not equal to "stopped" then
+                            set trackName to name of current track
+                            set trackArtist to artist of current track
+                            set trackAlbum to album of current track
+                            set trackDuration to duration of current track
+                            set playerPos to player position
+                            set trackNumber to track number of current track
+                            set discNumber to disc number of current track
+                            set trackPopularity to popularity of current track
+                            set artworkUrl to artwork url of current track
+                            set albumArtist to album artist of current track
+                            set spotifyUrl to spotify url of current track
+                            set trackId to id of current track
+                            set soundVol to sound volume
+                            set isShuffling to shuffling
+                            set isRepeating to repeating
+                            
+                            -- Replace pipe characters to avoid delimiter conflicts
+                            set trackName to my replaceText(trackName, "|", "§")
+                            set trackArtist to my replaceText(trackArtist, "|", "§")
+                            set trackAlbum to my replaceText(trackAlbum, "|", "§")
+                            set albumArtist to my replaceText(albumArtist, "|", "§")
+                            
+                            return "SUCCESS:" & playerState & "|" & trackName & "|" & trackArtist & "|" & trackAlbum & "|" & trackDuration & "|" & playerPos & "|" & trackNumber & "|" & discNumber & "|" & trackPopularity & "|" & artworkUrl & "|" & albumArtist & "|" & spotifyUrl & "|" & trackId & "|" & soundVol & "|" & isShuffling & "|" & isRepeating
+                        else
+                            return "STOPPED"
+                        end if
                     on error errMsg
-                        return {error:errMsg}
+                        return "ERROR:" & errMsg
                     end try
                 end tell
             else
-                return {playerState:"stopped", trackName:"", trackArtist:"", trackAlbum:""}
+                return "NOTRUNNING"
             end if
+            
+            on replaceText(theText, oldString, newString)
+                set AppleScript's text item delimiters to oldString
+                set textItems to text items of theText
+                set AppleScript's text item delimiters to newString
+                set theText to textItems as string
+                set AppleScript's text item delimiters to ""
+                return theText
+            end replaceText
             '''
             
             # Execute AppleScript
             result = self.executeAppleScript(script)
             
-            if result and 'error' not in result:
-                stateList = []
+            if result and result.startswith("SUCCESS:"):
+                # Parse the pipe-delimited result
+                parts = result[8:].split("|")  # Remove "SUCCESS:" prefix
                 
-                # Player state
-                playerState = result.get('playerState', 'stopped')
-                stateList.append({'key': 'playerState', 'value': playerState})
-                stateList.append({'key': 'isPlaying', 'value': playerState == 'playing'})
-                stateList.append({'key': 'isPaused', 'value': playerState == 'paused'})
-                stateList.append({'key': 'isStopped', 'value': playerState == 'stopped'})
-                
-                # Track information
-                trackName = result.get('trackName', '')
-                artist = result.get('trackArtist', '')
-                album = result.get('trackAlbum', '')
-                albumArtist = result.get('albumArtist', '')
-                
-                stateList.append({'key': 'trackName', 'value': trackName})
-                stateList.append({'key': 'artist', 'value': artist})
-                stateList.append({'key': 'album', 'value': album})
-                stateList.append({'key': 'albumArtist', 'value': albumArtist})
-                
-                # Track numbers and metadata
-                stateList.append({'key': 'trackNumber', 'value': int(result.get('trackNumber', 0))})
-                stateList.append({'key': 'discNumber', 'value': int(result.get('discNumber', 0))})
-                stateList.append({'key': 'popularity', 'value': int(result.get('popularity', 0))})
-                
-                # URLs and IDs
-                stateList.append({'key': 'artworkUrl', 'value': result.get('artworkUrl', '')})
-                stateList.append({'key': 'spotifyUrl', 'value': result.get('spotifyUrl', '')})
-                stateList.append({'key': 'trackId', 'value': result.get('trackId', '')})
-                
-                # Duration and position
-                duration = float(result.get('trackDuration', 0)) / 1000.0  # Convert ms to seconds
-                position = float(result.get('playerPosition', 0))
-                
-                stateList.append({'key': 'duration', 'value': int(duration)})
-                stateList.append({'key': 'durationFormatted', 'value': self.formatTime(duration)})
-                stateList.append({'key': 'playerPosition', 'value': int(position)})
-                stateList.append({'key': 'playerPositionFormatted', 'value': self.formatTime(position)})
-                
-                # Progress percentage
-                progressPercent = 0
-                if duration > 0:
-                    progressPercent = int((position / duration) * 100)
-                stateList.append({'key': 'progressPercent', 'value': progressPercent})
-                
-                # Volume
-                volume = int(result.get('soundVolume', 50))
-                stateList.append({'key': 'soundVolume', 'value': volume})
-                stateList.append({'key': 'muted', 'value': volume == 0})
-                
-                # Shuffle and repeat
-                stateList.append({'key': 'shuffling', 'value': result.get('shuffling', False)})
-                stateList.append({'key': 'repeating', 'value': result.get('repeating', False)})
-                
-                # Status display
-                if playerState == 'playing':
-                    status = f"▶ {artist} - {trackName}"
-                elif playerState == 'paused':
-                    status = f"⏸ {artist} - {trackName}"
-                else:
-                    status = "⏹ Stopped"
-                stateList.append({'key': 'status', 'value': status})
-                
-                # Update all states
-                dev.updateStatesOnServer(stateList)
-                
-                # Update variables if enabled
-                if dev.pluginProps.get('updateVariables', False):
-                    self.updateVariables(dev, result, stateList)
+                if len(parts) >= 16:
+                    stateList = []
                     
+                    # Player state
+                    playerState = parts[0]
+                    stateList.append({'key': 'playerState', 'value': playerState})
+                    stateList.append({'key': 'isPlaying', 'value': playerState == 'playing'})
+                    stateList.append({'key': 'isPaused', 'value': playerState == 'paused'})
+                    stateList.append({'key': 'isStopped', 'value': playerState == 'stopped'})
+                    
+                    # Track information
+                    trackName = parts[1].replace("§", "|")
+                    artist = parts[2].replace("§", "|")
+                    album = parts[3].replace("§", "|")
+                    albumArtist = parts[10].replace("§", "|")
+                    
+                    stateList.append({'key': 'trackName', 'value': trackName})
+                    stateList.append({'key': 'artist', 'value': artist})
+                    stateList.append({'key': 'album', 'value': album})
+                    stateList.append({'key': 'albumArtist', 'value': albumArtist})
+                    
+                    # Track numbers and metadata - handle floats from AppleScript
+                    stateList.append({'key': 'trackNumber', 'value': int(float(parts[6]))})
+                    stateList.append({'key': 'discNumber', 'value': int(float(parts[7]))})
+                    stateList.append({'key': 'popularity', 'value': int(float(parts[8]))})
+                    
+                    # URLs and IDs
+                    stateList.append({'key': 'artworkUrl', 'value': parts[9]})
+                    stateList.append({'key': 'spotifyUrl', 'value': parts[11]})
+                    stateList.append({'key': 'trackId', 'value': parts[12]})
+                    
+                    # Duration and position
+                    duration = float(parts[4]) / 1000.0  # Convert ms to seconds
+                    position = float(parts[5])
+                    
+                    stateList.append({'key': 'duration', 'value': int(duration)})
+                    stateList.append({'key': 'durationFormatted', 'value': self.formatTime(duration)})
+                    stateList.append({'key': 'playerPosition', 'value': int(position)})
+                    stateList.append({'key': 'playerPositionFormatted', 'value': self.formatTime(position)})
+                    
+                    # Progress percentage
+                    progressPercent = 0
+                    if duration > 0:
+                        progressPercent = int((position / duration) * 100)
+                    stateList.append({'key': 'progressPercent', 'value': progressPercent})
+                    
+                    # Volume
+                    volume = int(float(parts[13]))
+                    stateList.append({'key': 'soundVolume', 'value': volume})
+                    stateList.append({'key': 'muted', 'value': volume == 0})
+                    
+                    # Shuffle and repeat
+                    stateList.append({'key': 'shuffling', 'value': parts[14] == 'true'})
+                    stateList.append({'key': 'repeating', 'value': parts[15] == 'true'})
+                    
+                    # Status display
+                    if playerState == 'playing':
+                        status = f"▶ {artist} - {trackName}"
+                    elif playerState == 'paused':
+                        status = f"⏸ {artist} - {trackName}"
+                    else:
+                        status = "⏹ Stopped"
+                    stateList.append({'key': 'status', 'value': status})
+                    
+                    # Update all states
+                    dev.updateStatesOnServer(stateList)
+                    
+                    # Update variables if enabled
+                    if dev.pluginProps.get('updateVariables', False):
+                        self.updateVariables(dev, stateList)
             else:
-                # Spotify not responding or error
+                # Spotify not responding, stopped, or error
                 stateList = [
                     {'key': 'playerState', 'value': 'stopped'},
                     {'key': 'isPlaying', 'value': False},
                     {'key': 'isPaused', 'value': False},
                     {'key': 'isStopped', 'value': True},
-                    {'key': 'status', 'value': 'Not Running'}
+                    {'key': 'status', 'value': 'Not Running' if result == 'NOTRUNNING' else 'Stopped'}
                 ]
                 dev.updateStatesOnServer(stateList)
                 
         except Exception as e:
             self.errorLog(f"Error updating Spotify status: {str(e)}")
             
-    def updateVariables(self, dev, result, stateList):
+    def updateVariables(self, dev, stateList):
         """Update Indigo variables with Spotify data"""
         try:
             prefix = dev.pluginProps.get('variablePrefix', 'Spotify')
@@ -224,7 +246,7 @@ class Plugin(indigo.PluginBase):
             self.errorLog(f"Error updating variables: {str(e)}")
             
     def executeAppleScript(self, script):
-        """Execute AppleScript and return results as dictionary"""
+        """Execute AppleScript and return results as string"""
         try:
             # Use osascript to execute the script
             process = subprocess.Popen(
@@ -237,79 +259,13 @@ class Plugin(indigo.PluginBase):
             if stderr:
                 self.debugLog(f"AppleScript stderr: {stderr.decode('utf-8')}")
                 
-            # Parse the output (AppleScript record format)
+            # Return the output string
             output = stdout.decode('utf-8').strip()
-            
-            if not output:
-                return None
-                
-            # Parse AppleScript record into Python dict
-            result = self.parseAppleScriptRecord(output)
-            return result
+            return output
             
         except Exception as e:
             self.errorLog(f"Error executing AppleScript: {str(e)}")
             return None
-            
-    def parseAppleScriptRecord(self, record_string):
-        """Parse AppleScript record format into Python dictionary"""
-        try:
-            # Remove outer braces
-            record_string = record_string.strip()
-            if record_string.startswith('{') and record_string.endswith('}'):
-                record_string = record_string[1:-1]
-            
-            result = {}
-            
-            # Split by comma, but be careful with nested structures
-            parts = []
-            current = ""
-            depth = 0
-            in_quotes = False
-            
-            for char in record_string:
-                if char == '"' and (not current or current[-1] != '\\'):
-                    in_quotes = not in_quotes
-                elif not in_quotes:
-                    if char in '{[':
-                        depth += 1
-                    elif char in '}]':
-                        depth -= 1
-                    elif char == ',' and depth == 0:
-                        parts.append(current.strip())
-                        current = ""
-                        continue
-                current += char
-            
-            if current:
-                parts.append(current.strip())
-            
-            # Parse each key:value pair
-            for part in parts:
-                if ':' in part:
-                    key, value = part.split(':', 1)
-                    key = key.strip()
-                    value = value.strip()
-                    
-                    # Remove quotes if present
-                    if value.startswith('"') and value.endswith('"'):
-                        value = value[1:-1]
-                    
-                    # Convert to appropriate type
-                    if value.lower() == 'true':
-                        value = True
-                    elif value.lower() == 'false':
-                        value = False
-                    elif value.replace('.', '', 1).replace('-', '', 1).isdigit():
-                        value = float(value) if '.' in value else int(value)
-                    
-                    result[key] = value
-            
-            return result
-            
-        except Exception as e:
-            self.errorLog(f"Error parsing AppleScript record: {str(e)}")
-            return {}
             
     def formatTime(self, seconds):
         """Format seconds as MM:SS"""
