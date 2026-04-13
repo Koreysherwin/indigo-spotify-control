@@ -1,5 +1,33 @@
 # Changelog
 
+Spotify Control v1.0.7
+
+## New
+
+Added Indigo plugin store icon (3D cube style to match other SherwinSound plugins)
+Improved handling for Spotify URIs (track, album, playlist, artist)
+
+## Improved
+
+Search & Play now correctly respects selected search type
+More reliable AppleScript execution with basic error handling
+Cleaner state updates when Spotify is not running
+Better handling of invalid or empty user input in actions
+General code cleanup and consistency improvements
+
+## Fixed
+
+Fixed issue where all URIs were treated as track URIs
+Fixed potential crashes from invalid numeric inputs
+Fixed stale metadata remaining when playback stops
+Corrected plugin metadata inconsistencies in Info.plist
+Renamed plugin internally from “Spotify Control2” to “Spotify Control”
+
+## Technical
+
+Standardized plugin versioning to 1.0.7
+Added missing IwsApiVersion
+
 ## Version 1.0.6
 - Corrected the Indigo-visible plugin version so `PluginVersion` matches the updated release instead of still showing `1.0.3`.
 - Packaged a corrected bundle for testing.
