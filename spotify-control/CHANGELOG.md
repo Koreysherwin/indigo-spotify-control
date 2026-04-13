@@ -1,6 +1,6 @@
 # Changelog
 
-##Version 1.0.7
+## Version 1.0.7
 
 New
 
