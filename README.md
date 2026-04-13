@@ -263,8 +263,8 @@ The plugin uses AppleScript to communicate with Spotify:
 
 ## Version History
 
-### 1.0.0 (Current)
-- Initial release
+### 1.0.7 (Current)
+
 - Complete playback control
 - Comprehensive state monitoring
 - Variable integration
