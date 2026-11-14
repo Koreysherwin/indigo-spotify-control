@@ -2,6 +2,12 @@
 
 A comprehensive Indigo plugin for controlling Spotify and monitoring all playback data in real-time.
 
+## Spotify Connect detection (1.0.8)
+
+Optional Web API integration identifies the active playback device. Create an app in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard), enable Web API and register `http://127.0.0.1:43821/callback` as the redirect URI. Enter the Client ID in plugin preferences, set the local Spotify Connect device name in the Indigo device configuration, then run **Authorize Spotify Connect Detection** on the Mac running Indigo. Spotify account and developer-app eligibility rules apply.
+
+Use **Playing on this Mac** (`isLocalPlayback`) becoming On for speaker automations; it requires active playback and a matching configured device name. **Active Connect Device** identifies the device independently of playback. Existing AppleScript states and actions remain available. See the bundled README-Connect-Detection.txt for details.
+
 ## Features
 
 ### Device States (Auto-Updated)
@@ -253,8 +259,8 @@ The plugin uses AppleScript to communicate with Spotify:
 ### How It Works
 - Uses AppleScript to communicate with Spotify application
 - Polls Spotify at configurable intervals
-- No network requests required (all local)
-- No Spotify API credentials needed
+- AppleScript controls remain local; optional Connect detection uses Spotify Web API
+- Spotify Client ID and authorization required only for Connect detection
 
 ### Performance
 - Minimal CPU usage with 1-2 second update frequency
@@ -263,7 +269,10 @@ The plugin uses AppleScript to communicate with Spotify:
 
 ## Version History
 
-### 1.0.0 (Current)
+### 1.0.8 (Current)
+- Optional Spotify Connect active-device detection and local playback state
+
+### Previous version
 - Initial release
 - Complete playback control
 - Comprehensive state monitoring
@@ -284,4 +293,4 @@ This plugin is provided as-is for use with Indigo home automation.
 
 ---
 
-**Note**: This plugin controls the Spotify desktop application on the Mac running Indigo. It does not control Spotify Connect devices or other Spotify instances. For multi-room control, use Spotify Connect within the Spotify app itself.
+**Note**: This plugin controls the Spotify desktop application on the Mac running Indigo. Optional Web API detection identifies the active Spotify Connect device; it does not add remote playback controls. For multi-room control, use Spotify Connect within the Spotify app itself.

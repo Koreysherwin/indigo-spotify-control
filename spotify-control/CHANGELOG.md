@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.0.8
+- Added optional Spotify Connect active-device detection using OAuth PKCE and the Spotify Web API.
+- Added active device name, type and ID, local playback and connection status states.
+- Configurable local device name and automatic token refresh.
+- Preserved existing AppleScript controls and states.
+
 ## Version 1.0.7
 
 New

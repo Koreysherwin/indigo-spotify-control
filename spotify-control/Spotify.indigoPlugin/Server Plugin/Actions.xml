@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Actions>
+	<Action id="authorizeSpotify" deviceFilter="self">
+		<Name>Authorize Spotify Connect Detection</Name>
+		<CallbackMethod>actionAuthorizeSpotify</CallbackMethod>
+	</Action>
 	<!-- Playback Control Actions -->
 	<Action id="play" deviceFilter="self">
 		<Name>Play</Name>

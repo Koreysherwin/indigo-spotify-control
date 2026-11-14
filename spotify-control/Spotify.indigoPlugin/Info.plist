@@ -20,16 +20,16 @@
 	</array>
 
 	<key>CFBundleVersion</key>
-	<string>1.0.7</string>
+	<string>1.0.8</string>
 
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.7</string>
+	<string>1.0.8</string>
 
 	<key>PluginName</key>
 	<string>Spotify Control</string>
 
 	<key>PluginVersion</key>
-	<string>1.0.7</string>
+	<string>1.0.8</string>
 
 	<key>ServerApiVersion</key>
 	<string>3.0</string>

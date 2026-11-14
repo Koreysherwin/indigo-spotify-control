@@ -3,7 +3,7 @@
 """
 Spotify Control Plugin for Indigo
 Provides comprehensive control and monitoring of Spotify playback
-Version 1.0.7 - Store release candidate with metadata and action fixes
+Version 1.0.8 - Spotify Connect active-device detection
 """
 
 import indigo
@@ -12,10 +12,24 @@ import subprocess
 import json
 import re
 import threading
+import urllib.request
+import urllib.parse
+import urllib.error
+import http.server
+import socketserver
+import secrets
+import hashlib
+import base64
+import webbrowser
 
 kUpdateFrequencyKey = "updateFrequency"
 MIN_UPDATE_FREQUENCY = 2.0
 APPLE_SCRIPT_TIMEOUT = 3.0
+SPOTIFY_API_BASE = "https://api.spotify.com/v1"
+SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
+SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
+SPOTIFY_REDIRECT_URI = "http://127.0.0.1:43821/callback"
+SPOTIFY_SCOPE = "user-read-playback-state"
 BUSY_RESULT = "__BUSY__"
 
 
@@ -27,6 +41,10 @@ class Plugin(indigo.PluginBase):
         self.debug = pluginPrefs.get("showDebugInfo", False)
         self.deviceDict = {}
         self.scriptLock = threading.Lock()
+        self.connectLock = threading.Lock()
+        self.oauthServer = None
+        self.oauthState = None
+        self.oauthVerifier = None
 
     def startup(self):
         self.debugLog(u"Spotify Plugin startup called")
@@ -67,6 +85,15 @@ class Plugin(indigo.PluginBase):
 
     def updateSpotifyStatus(self, dev):
         try:
+            # Spotify AppleScript reports the app/account playback view, which can
+            # reflect a remote Connect session. Keep that legacy state, but publish
+            # a separate, API-verified local-device state for automations.
+            connectStates = self.getConnectDeviceStates(dev)
+            if connectStates:
+                dev.updateStatesOnServer(connectStates)
+                if dev.pluginProps.get('updateVariables', False):
+                    self.updateVariables(dev, connectStates)
+
             if not self.isProcessRunning("Spotify"):
                 dev.updateStatesOnServer([
                     {'key': 'playerState', 'value': 'stopped'},
@@ -89,7 +116,7 @@ class Plugin(indigo.PluginBase):
                     {'key': 'playerPositionFormatted', 'value': '00:00'},
                     {'key': 'progressPercent', 'value': 0},
                     {'key': 'status', 'value': 'Not Running'}
-                ])
+                ] + connectStates)
                 return
 
             script = r'''
@@ -193,6 +220,7 @@ class Plugin(indigo.PluginBase):
                 else:
                     status = "⏹ Stopped"
                 stateList.append({'key': 'status', 'value': status})
+                stateList.extend(connectStates)
                 dev.updateStatesOnServer(stateList)
                 if dev.pluginProps.get('updateVariables', False):
                     self.updateVariables(dev, stateList)
@@ -233,9 +261,188 @@ class Plugin(indigo.PluginBase):
                     {'key': 'shuffling', 'value': shuffling},
                     {'key': 'repeating', 'value': repeating},
                     {'key': 'status', 'value': '⏹ Stopped'}
-                ])
+                ] + connectStates)
         except Exception as e:
             self.errorLog(f"Error updating Spotify status: {str(e)}")
+
+    # ========================================================================
+    # Spotify Connect device identification (Web API + OAuth PKCE)
+    # ========================================================================
+
+    def getConnectDeviceStates(self, dev):
+        """Return fail-safe Connect states. Local playback is True only when the
+        Spotify Web API confirms the active device matches the configured Mac name."""
+        default = [
+            {'key': 'activeDeviceName', 'value': ''},
+            {'key': 'activeDeviceType', 'value': ''},
+            {'key': 'activeDeviceId', 'value': ''},
+            {'key': 'isLocalPlayback', 'value': False},
+            {'key': 'connectStatus', 'value': 'Not authorized'},
+        ]
+        client_id = str(self.pluginPrefs.get('spotifyClientId', '')).strip()
+        if not client_id:
+            default[-1]['value'] = 'Client ID required'
+            return default
+
+        token = self.getSpotifyAccessToken()
+        if not token:
+            default[-1]['value'] = 'Authorization required'
+            return default
+
+        try:
+            request = urllib.request.Request(
+                SPOTIFY_API_BASE + '/me/player',
+                headers={'Authorization': 'Bearer ' + token, 'Accept': 'application/json'}
+            )
+            with urllib.request.urlopen(request, timeout=4) as response:
+                if response.status == 204:
+                    default[-1]['value'] = 'No active player'
+                    return default
+                payload = json.loads(response.read().decode('utf-8'))
+            device = payload.get('device') or {}
+            device_name = str(device.get('name') or '')
+            device_type = str(device.get('type') or '')
+            device_id = str(device.get('id') or '')
+            is_playing = bool(payload.get('is_playing', False))
+            local_name = str(dev.pluginProps.get('localDeviceName', 'Mac Studio')).strip()
+            is_local = bool(is_playing and device_name and local_name and
+                            device_name.casefold() == local_name.casefold())
+            return [
+                {'key': 'activeDeviceName', 'value': device_name},
+                {'key': 'activeDeviceType', 'value': device_type},
+                {'key': 'activeDeviceId', 'value': device_id},
+                {'key': 'isLocalPlayback', 'value': is_local},
+                {'key': 'connectStatus', 'value': 'Playing locally' if is_local else
+                 ('Playing on another device' if is_playing else 'Not playing')},
+            ]
+        except urllib.error.HTTPError as e:
+            if e.code == 204:
+                default[-1]['value'] = 'No active player'
+            elif e.code == 401:
+                default[-1]['value'] = 'Authorization expired'
+                self.refreshSpotifyToken()
+            else:
+                default[-1]['value'] = 'API error {}'.format(e.code)
+                self.debugLog('Spotify Connect API HTTP error: {}'.format(e.code))
+            return default
+        except Exception as e:
+            default[-1]['value'] = 'API unavailable'
+            self.debugLog('Spotify Connect API error: {}'.format(e))
+            return default
+
+    def getSpotifyAccessToken(self):
+        token = str(self.pluginPrefs.get('spotifyAccessToken', '')).strip()
+        expiry = float(self.pluginPrefs.get('spotifyTokenExpiry', 0) or 0)
+        if token and time.time() < expiry - 60:
+            return token
+        return self.refreshSpotifyToken()
+
+    def refreshSpotifyToken(self):
+        refresh_token = str(self.pluginPrefs.get('spotifyRefreshToken', '')).strip()
+        client_id = str(self.pluginPrefs.get('spotifyClientId', '')).strip()
+        if not refresh_token or not client_id:
+            return None
+        try:
+            body = urllib.parse.urlencode({
+                'grant_type': 'refresh_token', 'refresh_token': refresh_token,
+                'client_id': client_id,
+            }).encode('utf-8')
+            request = urllib.request.Request(SPOTIFY_TOKEN_URL, data=body,
+                                             headers={'Content-Type': 'application/x-www-form-urlencoded'})
+            with urllib.request.urlopen(request, timeout=8) as response:
+                data = json.loads(response.read().decode('utf-8'))
+            self.storeSpotifyTokens(data)
+            return data.get('access_token')
+        except Exception as e:
+            self.debugLog('Spotify token refresh failed: {}'.format(e))
+            return None
+
+    def storeSpotifyTokens(self, data):
+        self.pluginPrefs['spotifyAccessToken'] = data.get('access_token', '')
+        if data.get('refresh_token'):
+            self.pluginPrefs['spotifyRefreshToken'] = data['refresh_token']
+        self.pluginPrefs['spotifyTokenExpiry'] = time.time() + int(data.get('expires_in', 3600))
+        self.savePluginPrefs()
+
+    def actionAuthorizeSpotify(self, pluginAction, dev):
+        """Start Spotify's authorization-code-with-PKCE browser flow."""
+        client_id = str(self.pluginPrefs.get('spotifyClientId', '')).strip()
+        if not client_id:
+            self.errorLog('Set the Spotify Client ID in Plugin Preferences before authorizing.')
+            return
+        if self.oauthServer:
+            self.debugLog('Spotify authorization is already waiting for a browser response.')
+            return
+        self.oauthState = secrets.token_urlsafe(24)
+        self.oauthVerifier = secrets.token_urlsafe(64)
+        challenge = base64.urlsafe_b64encode(hashlib.sha256(self.oauthVerifier.encode('ascii')).digest()).rstrip(b'=').decode('ascii')
+        query = urllib.parse.urlencode({
+            'client_id': client_id, 'response_type': 'code',
+            'redirect_uri': SPOTIFY_REDIRECT_URI, 'scope': SPOTIFY_SCOPE,
+            'state': self.oauthState, 'code_challenge_method': 'S256',
+            'code_challenge': challenge,
+        })
+        plugin = self
+
+        class CallbackHandler(http.server.BaseHTTPRequestHandler):
+            def do_GET(handler):
+                params = urllib.parse.parse_qs(urllib.parse.urlparse(handler.path).query)
+                if params.get('state', [''])[0] != plugin.oauthState:
+                    handler.send_response(400); handler.end_headers()
+                    handler.wfile.write(b'Authorization state mismatch. You can close this window.')
+                    return
+                code = params.get('code', [''])[0]
+                if not code:
+                    handler.send_response(400); handler.end_headers()
+                    handler.wfile.write(b'Spotify authorization was not completed. You can close this window.')
+                    return
+                try:
+                    body = urllib.parse.urlencode({
+                        'client_id': client_id, 'grant_type': 'authorization_code',
+                        'code': code, 'redirect_uri': SPOTIFY_REDIRECT_URI,
+                        'code_verifier': plugin.oauthVerifier,
+                    }).encode('utf-8')
+                    req = urllib.request.Request(SPOTIFY_TOKEN_URL, data=body,
+                        headers={'Content-Type': 'application/x-www-form-urlencoded'})
+                    with urllib.request.urlopen(req, timeout=10) as response:
+                        token_data = json.loads(response.read().decode('utf-8'))
+                    plugin.storeSpotifyTokens(token_data)
+                    message = b'Spotify connected successfully. You can close this window.'
+                    plugin.debugLog('Spotify Web API authorization completed.')
+                except Exception as exc:
+                    message = ('Spotify authorization failed: ' + str(exc)).encode('utf-8', 'replace')
+                    plugin.errorLog(message.decode('utf-8', 'replace'))
+                handler.send_response(200)
+                handler.send_header('Content-Type', 'text/plain; charset=utf-8')
+                handler.end_headers()
+                handler.wfile.write(message)
+                threading.Thread(target=plugin.stopOAuthServer, daemon=True).start()
+
+            def log_message(self, format, *args):
+                return
+
+        try:
+            self.oauthServer = socketserver.TCPServer(('127.0.0.1', 43821), CallbackHandler)
+            self.oauthServer.allow_reuse_address = True
+            threading.Thread(target=self.oauthServer.serve_forever, daemon=True).start()
+            auth_url = SPOTIFY_AUTH_URL + '?' + query
+            webbrowser.open(auth_url)
+            self.debugLog('Opened Spotify authorization in the default browser.')
+        except Exception as e:
+            self.oauthServer = None
+            self.errorLog('Could not start Spotify authorization callback on 127.0.0.1:43821: {}'.format(e))
+
+    def stopOAuthServer(self):
+        server = self.oauthServer
+        self.oauthServer = None
+        if server:
+            try:
+                server.shutdown()
+                server.server_close()
+            except Exception:
+                pass
+        self.oauthState = None
+        self.oauthVerifier = None
 
     def updateVariables(self, dev, stateList):
         try:

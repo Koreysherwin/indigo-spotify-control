@@ -12,6 +12,10 @@
 					<Option value="10">Every 10 seconds</Option>
 				</List>
 			</Field>
+			<Field id="localDeviceName" type="textfield" defaultValue="Mac Studio">
+				<Label>Local Spotify Connect device name:</Label>
+				<Description>Must match the Mac Studio's device name shown in Spotify Connect (case-insensitive).</Description>
+			</Field>
 			<Field id="updateVariables" type="checkbox" defaultValue="false">
 				<Label>Update Indigo Variables:</Label>
 				<Description>Create/update Indigo variables with Spotify data</Description>
@@ -43,6 +47,12 @@
 				<TriggerLabel>Is Stopped</TriggerLabel>
 				<ControlPageLabel>Is Stopped</ControlPageLabel>
 			</State>
+			<!-- Spotify Connect device identity -->
+			<State id="activeDeviceName"><ValueType>String</ValueType><TriggerLabel>Active Connect Device</TriggerLabel><ControlPageLabel>Connect Device</ControlPageLabel></State>
+			<State id="activeDeviceType"><ValueType>String</ValueType><TriggerLabel>Active Connect Device Type</TriggerLabel><ControlPageLabel>Device Type</ControlPageLabel></State>
+			<State id="activeDeviceId"><ValueType>String</ValueType><TriggerLabel>Active Connect Device ID</TriggerLabel><ControlPageLabel>Device ID</ControlPageLabel></State>
+			<State id="isLocalPlayback"><ValueType boolType="OnOff">Boolean</ValueType><TriggerLabel>Playing on this Mac</TriggerLabel><ControlPageLabel>Local Playback</ControlPageLabel></State>
+			<State id="connectStatus"><ValueType>String</ValueType><TriggerLabel>Connect Detection Status</TriggerLabel><ControlPageLabel>Connect Status</ControlPageLabel></State>
 			
 			<!-- Track Information -->
 			<State id="trackName">

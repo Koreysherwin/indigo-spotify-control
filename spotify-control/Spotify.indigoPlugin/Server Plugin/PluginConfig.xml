@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PluginConfig>
+	<Field id="spotifyClientId" type="textfield" defaultValue="">
+		<Label>Spotify Developer App Client ID:</Label>
+		<Description>Required for active Spotify Connect device detection. Create an app in the Spotify Developer Dashboard and add http://127.0.0.1:43821/callback as a Redirect URI.</Description>
+	</Field>
 	<Field id="showDebugInfo" type="checkbox" defaultValue="false">
 		<Label>Enable debug logging:</Label>
 		<Description>Show detailed debug information in the Indigo log</Description>
