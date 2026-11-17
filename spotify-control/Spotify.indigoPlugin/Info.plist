@@ -17,19 +17,23 @@
 			<key>CFBundleURLName</key>
 			<string>https://www.indigodomo.com/pluginstore/325/</string>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>https://forums.indigodomo.com/viewforum.php?f=427</string>
+		</dict>
 	</array>
 
 	<key>CFBundleVersion</key>
-	<string>1.0.8</string>
+	<string>1.0.9</string>
 
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.8</string>
+	<string>1.0.9</string>
 
 	<key>PluginName</key>
 	<string>Spotify Control</string>
 
 	<key>PluginVersion</key>
-	<string>1.0.8</string>
+	<string>1.0.9</string>
 
 	<key>ServerApiVersion</key>
 	<string>3.0</string>
@@ -45,12 +49,5 @@
 	<key>IndigoPluginDescription</key>
 	<string>Controls Spotify playback and reports status metadata.</string>
 
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>https://forums.indigodomo.com/viewforum.php?f=427</string>
-		</dict>
-	</array>
 </dict>
 </plist>

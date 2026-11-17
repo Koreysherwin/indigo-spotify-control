@@ -1,4 +1,4 @@
-Spotify Control 1.0.8 — Spotify Connect device detection
+Spotify Control 1.0.9 — Spotify Connect device detection
 
 WHAT CHANGED
 - Added Spotify Web API active-device detection using OAuth Authorization Code + PKCE.
@@ -43,3 +43,6 @@ NOTES
   local callback port 43821 on 127.0.0.1 during authorization.
 - Spotify API access is subject to Spotify developer-app/account policies.
 - If the Mac's Spotify Connect name changes, update the device setting.
+
+VERSION 1.0.9
+Individual AppleScript track metadata reads now fall back to zero or empty text if Spotify returns an error or missing value. Playback and Connect monitoring remain unchanged.

@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.0.9
+- Fixed Spotify AppleScript error -1700 when track popularity is unavailable.
+- Added individual fallback handling for 11 track metadata properties.
+- Preserved Spotify Connect detection and existing controls.
+- Consolidated duplicate CFBundleURLTypes entries while preserving both URLs.
+
 ## Version 1.0.8
 - Added optional Spotify Connect active-device detection using OAuth PKCE and the Spotify Web API.
 - Added active device name, type and ID, local playback and connection status states.

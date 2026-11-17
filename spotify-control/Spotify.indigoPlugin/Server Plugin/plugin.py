@@ -3,7 +3,7 @@
 """
 Spotify Control Plugin for Indigo
 Provides comprehensive control and monitoring of Spotify playback
-Version 1.0.8 - Spotify Connect active-device detection
+Version 1.0.9 - Defensive Spotify metadata handling
 """
 
 import indigo
@@ -127,22 +127,91 @@ class Plugin(indigo.PluginBase):
                     set isShuffling to shuffling
                     set isRepeating to repeating
                     if playerState is not equal to "stopped" then
-                        set trackName to name of current track
-                        set trackArtist to artist of current track
-                        set trackAlbum to album of current track
-                        set trackDuration to duration of current track
+                        try
+                            set trackName to name of current track
+                            if trackName is missing value then set trackName to ""
+                            set trackName to trackName as text
+                        on error
+                            set trackName to ""
+                        end try
+                        try
+                            set trackArtist to artist of current track
+                            if trackArtist is missing value then set trackArtist to ""
+                            set trackArtist to trackArtist as text
+                        on error
+                            set trackArtist to ""
+                        end try
+                        try
+                            set trackAlbum to album of current track
+                            if trackAlbum is missing value then set trackAlbum to ""
+                            set trackAlbum to trackAlbum as text
+                        on error
+                            set trackAlbum to ""
+                        end try
+                        try
+                            set trackDuration to duration of current track
+                            if trackDuration is missing value then set trackDuration to 0
+                            set trackDuration to trackDuration as integer
+                        on error
+                            set trackDuration to 0
+                        end try
                         set playerPos to player position
-                        set trackNumber to track number of current track
-                        set discNumber to disc number of current track
-                        set trackPopularity to popularity of current track
-                        set artworkUrl to artwork url of current track
-                        set albumArtist to album artist of current track
-                        set spotifyUrl to spotify url of current track
-                        set trackId to id of current track
+                        try
+                            set trackNumber to track number of current track
+                            if trackNumber is missing value then set trackNumber to 0
+                            set trackNumber to trackNumber as integer
+                        on error
+                            set trackNumber to 0
+                        end try
+                        try
+                            set discNumber to disc number of current track
+                            if discNumber is missing value then set discNumber to 0
+                            set discNumber to discNumber as integer
+                        on error
+                            set discNumber to 0
+                        end try
+                        try
+                            set trackPopularity to popularity of current track
+                            if trackPopularity is missing value then set trackPopularity to 0
+                            set trackPopularity to trackPopularity as integer
+                        on error
+                            set trackPopularity to 0
+                        end try
+                        try
+                            set artworkUrl to artwork url of current track
+                            if artworkUrl is missing value then set artworkUrl to ""
+                            set artworkUrl to artworkUrl as text
+                        on error
+                            set artworkUrl to ""
+                        end try
+                        try
+                            set albumArtist to album artist of current track
+                            if albumArtist is missing value then set albumArtist to ""
+                            set albumArtist to albumArtist as text
+                        on error
+                            set albumArtist to ""
+                        end try
+                        try
+                            set spotifyUrl to spotify url of current track
+                            if spotifyUrl is missing value then set spotifyUrl to ""
+                            set spotifyUrl to spotifyUrl as text
+                        on error
+                            set spotifyUrl to ""
+                        end try
+                        try
+                            set trackId to id of current track
+                            if trackId is missing value then set trackId to ""
+                            set trackId to trackId as text
+                        on error
+                            set trackId to ""
+                        end try
                         set trackName to my replaceText(trackName, "|", "__PIPE__")
                         set trackArtist to my replaceText(trackArtist, "|", "__PIPE__")
                         set trackAlbum to my replaceText(trackAlbum, "|", "__PIPE__")
                         set albumArtist to my replaceText(albumArtist, "|", "__PIPE__")
+                        set artworkUrl to my replaceText(artworkUrl, "|", "__PIPE__")
+                        set spotifyUrl to my replaceText(spotifyUrl, "|", "__PIPE__")
+                        set trackId to my replaceText(trackId, "|", "__PIPE__")
                         return "SUCCESS:" & playerState & "|" & trackName & "|" & trackArtist & "|" & trackAlbum & "|" & trackDuration & "|" & playerPos & "|" & trackNumber & "|" & discNumber & "|" & trackPopularity & "|" & artworkUrl & "|" & albumArtist & "|" & spotifyUrl & "|" & trackId & "|" & soundVol & "|" & isShuffling & "|" & isRepeating
                     else
                         return "STOPPED|" & soundVol & "|" & isShuffling & "|" & isRepeating
@@ -200,9 +269,9 @@ class Plugin(indigo.PluginBase):
                     {'key': 'trackNumber', 'value': safe_int(parts[6])},
                     {'key': 'discNumber', 'value': safe_int(parts[7])},
                     {'key': 'popularity', 'value': safe_int(parts[8])},
-                    {'key': 'artworkUrl', 'value': parts[9]},
-                    {'key': 'spotifyUrl', 'value': parts[11]},
-                    {'key': 'trackId', 'value': parts[12]},
+                    {'key': 'artworkUrl', 'value': parts[9].replace("__PIPE__", "|")},
+                    {'key': 'spotifyUrl', 'value': parts[11].replace("__PIPE__", "|")},
+                    {'key': 'trackId', 'value': parts[12].replace("__PIPE__", "|")},
                     {'key': 'duration', 'value': int(duration)},
                     {'key': 'durationFormatted', 'value': self.formatTime(duration)},
                     {'key': 'playerPosition', 'value': int(position)},

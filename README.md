@@ -269,7 +269,11 @@ The plugin uses AppleScript to communicate with Spotify:
 
 ## Version History
 
-### 1.0.8 (Current)
+### 1.0.9 (Current)
+- Fixed AppleScript metadata failures, including error -1700 for track popularity.
+- Missing or invalid track metadata now falls back to zero or empty text without interrupting the remaining status update.
+
+### 1.0.8
 - Optional Spotify Connect active-device detection and local playback state
 
 ### Previous version
